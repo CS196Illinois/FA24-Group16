@@ -11,6 +11,23 @@ the value by the bet - a little restuctruing of my player_bet(), bot_move(), eva
 texas_holdem() function.
 """
 
+"""
+10/17/24 v2 update
+-- implemented a money system
+
+-- still need card evaluation logic
+-- still need bot betting logic (can be based on card evalutaion logic)
+-- still need to implement a database for storing past games for modeltraining purposes
+"""
+
+'''
+final showdown:
+current hand + community cards - sum up the ranks
+    - run is_sraight() and is_flush() if both == true we have a royal_flush()
+    - run is...
+
+'''
+
 import random
 
 # formating the deck of cards
@@ -46,16 +63,35 @@ def evaluate_hand(hand, community_cards):
     return combined
 
 # randome decision to call/raise/fold since i havent implemented anything futher
-def bot_move():
-    return random.choice(['call', 'raise', 'fold'])
+# adding logic for a bet size basic adding and subtracting from current balance and current bet
+def bot_move(bot_balance, current_bet):
+    # check logic here****
+    if bot_balance <= current_bet:
+        return "call", 0 # if you dont have enough to raise just call it all in
+    decision = random.choice(['call', 'raise', 'fold'])
+    if decision == 'raise':
+        raise_amount = random.choice([5, 10, 50])
+        if bot_balance >= current_bet + raise_amount:
+            return 'raise', raise_amount
+        else:
+            return 'call', 0 # cant afford the raise attempt
+    return decision, 0 # defualt is to call or fold
 
 # players move
-def player_bet():
-    move = input("Your move (check, bet, fold): ").strip().lower()
+def player_bet(player_balance, current_bet):
+    move = input(f"Your move (check, bet, fold). Current bet: ${current_bet}, Your balance: ${player_balance}: ").strip().lower()
+
     while move not in ['check', 'bet', 'fold']:
         # incase user doesn't say a normal move type
         move = input("Invalid move. Choose 'check', 'bet', or 'fold': ").strip().lower()
-    return move
+
+    if move == 'bet':
+        # im putting 'USD' outside of the bet amount for simplicity don't want to edit if if people put $5...
+        bet_amount = int(input(f"Choose your bet (5, 10, 50) USD. Your balance: ${player_balance}: "))
+        while bet_amount not in [5, 10, 50] or bet_amount >= player_balance:
+            bet_amount = int(input(f"Invalid bet amount, choose 5, 10, 50 within your balance: "))
+        return "bet", bet_amount
+    return move, 0
 
 # individual game function
 def texas_holdem():
@@ -66,14 +102,19 @@ def texas_holdem():
     # giving bot cards
     bot_hand = deck.deal(2)
     community_cards = []
+    # giving the player and bot a starting balance
+    player_balance = 500 # $500usd
+    bot_balance = 500
 
     print(f"Your hand: {player_hand}")
     print(f"Bot hand: [hidden]")
 
     # pre flop betting round 1
+    current_bet = 0
     print("Pre-flop betting")
-    player_move = player_bet()
-    bot_move_choice = bot_move()
+    # updated the moves to take in the move and bet amounts
+    player_move, player_bet_amount = player_bet(player_balance, current_bet)
+    bot_move_choice, bot_raise_amount = bot_move(bot_balance, current_bet)
 
     if player_move == 'fold':
         # easy enough lol
@@ -82,9 +123,13 @@ def texas_holdem():
     elif bot_move_choice == 'fold':
         print("Bot folded. You win!")
         return
+    else:
+        current_bet += max(player_bet_amount, bot_raise_amount)
+        player_balance -= current_bet
+        bot_balance -= current_bet
 
     # tell player what the bot did for turn
-    print(f"Bot chooses to {bot_move_choice}")
+    print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
     
     # the flop - just put 3 random cards into the community cards list and then tell the user what they are
     community_cards += deck.deal(3)
@@ -92,8 +137,8 @@ def texas_holdem():
 
     # after flop betting round 2
     print("Flop betting")
-    player_move = player_bet()
-    bot_move_choice = bot_move()
+    player_move, player_bet_amount = player_bet(player_balance, current_bet)
+    bot_move_choice, bot_raise_amount = bot_move(bot_balance, current_bet)
 
     if player_move == 'fold':
         print("You folded. Bot wins!")
@@ -101,8 +146,12 @@ def texas_holdem():
     elif bot_move_choice == 'fold':
         print("Bot folded. You win!")
         return
+    else:
+        current_bet += max(player_bet_amount, bot_raise_amount)
+        player_balance -= current_bet
+        bot_balance -= current_bet
 
-    print(f"Bot chooses to {bot_move_choice}")
+    print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
     
     # burn and turn 1 - add another card to the community cards
     community_cards += deck.deal(1)
@@ -110,8 +159,8 @@ def texas_holdem():
 
     # betting round 3
     print("Turn betting")
-    player_move = player_bet()
-    bot_move_choice = bot_move()
+    player_move, player_bet_amount = player_bet(player_balance, current_bet)
+    bot_move_choice, bot_raise_amount = bot_move(bot_balance, current_bet)
 
     if player_move == 'fold':
         print("You folded. Bot wins!")
@@ -119,8 +168,12 @@ def texas_holdem():
     elif bot_move_choice == 'fold':
         print("Bot folded. You win!")
         return
+    else:
+        current_bet += max(player_bet_amount, bot_raise_amount)
+        player_balance -= current_bet
+        bot_balance -= current_bet
 
-    print(f"Bot chooses to {bot_move_choice}")
+    print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
 
     # burn and turn final community card - should be 5 total cards in the community cards list
     community_cards += deck.deal(1)
@@ -128,8 +181,8 @@ def texas_holdem():
 
     # betting round 4 (should be final one)
     print("Final betting (river)")
-    player_move = player_bet()
-    bot_move_choice = bot_move()
+    player_move, player_bet_amount = player_bet(player_balance, current_bet)
+    bot_move_choice, bot_raise_amount = bot_move(bot_balance, current_bet)
 
     if player_move == 'fold':
         print("You folded. Bot wins!")
@@ -137,8 +190,15 @@ def texas_holdem():
     elif bot_move_choice == 'fold':
         print("Bot folded. You win!")
         return
+    else:
+        current_bet += max(player_bet_amount, bot_raise_amount)
+        player_balance -= current_bet
+        bot_balance -= current_bet
 
-    print(f"Bot chooses to {bot_move_choice}")
+
+    print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
+
+    # ---------------- this stage is different then previous ones ----------------------------------
 
     # if the game is still going after final betting round do the showdown aka show the players cards
     print("Showdown!")
@@ -146,13 +206,17 @@ def texas_holdem():
     bot_best_hand = evaluate_hand(bot_hand, community_cards)
 
     print(f"Your hand: {player_best_hand}")
-    print(f"Bot hand: {bot_hand}")
+    print(f"Bot hand: {bot_best_hand}")
 
     # compare the hands, should return the higher hand - i havent added this yet right now its random still lol
+    # -- updated to change player/bot balances no need for subtraction since thats done by making bets in the first place
     if random.choice([True, False]):
         print("You win the round!")
+        player_balance += current_bet * 2 # just multiplied times the number of players aka 2
     else:
         print("Bot wins the round!")
+        bot_balance += current_bet * 2 # same logic as ^
 
+    print(f"Your balance: ${player_balance}, Bot balance: ${bot_balance}")
 # start a game
 texas_holdem()
