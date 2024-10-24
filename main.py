@@ -15,6 +15,7 @@ texas_holdem() function.
 10/17/24 v2 update
 -- implemented a money system
 
+-- still need to implement cycles aka when i bet and bot raisees we go again in the same stage
 -- still need card evaluation logic
 -- still need bot betting logic (can be based on card evalutaion logic)
 -- still need to implement a database for storing past games for modeltraining purposes
