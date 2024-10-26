@@ -60,11 +60,63 @@ class Deck:
             dealt_cards.append(self.cards.pop())
         return dealt_cards
 
-# not sure how we want to do it yet but evaluate the hand strength
-def evaluate_hand(hand, community_cards):
+def evaluate_hand(hand, board_cards):
     # simple strength value that is the sum of hand + community cards right now
-    combined = hand + community_cards
-    return combined
+    combined = copy.deepcopy(hand) + copy.deepcopy(board_cards)
+    for i in range(len(combined)):
+        newRank = ranks.index(str(combined[i].rank)) + 2
+        combined[i].rank = newRank
+    SC = sorted(combined, key=lambda x: x.rank, reverse=False)
+    print("Sorted Total Cards: ", SC)
+
+    # Checks for Flush
+    isFlush = False
+    HeartCount = 0
+    DiaCount = 0
+    ClubCount = 0
+    SpadeCount = 0
+    for i in range(len(SC)):
+        if (SC[i].suit == 'Hearts'):
+            HeartCount += 1
+        if (SC[i].suit == 'Clubs'):
+            ClubCount += 1
+        if (SC[i].suit == 'Spades'):
+            SpadeCount += 1
+        if (SC[i].suit == 'Diamonds'):
+            DiaCount += 1
+    if (DiaCount >= 5 or HeartCount >= 5 or ClubCount >= 5 or SpadeCount >= 5):
+        isFlush = True
+        # Insert code that takes all the cards that belong to the Flush, and add it to a separate list to check for Straight Flush
+    
+    # If isFlush is true, check for Straight flush
+    if isFlush == True:
+        isStraightFlush = False
+        while i in range(4):
+            if SC[0 + i].rank != (SC[1 + i].rank + 1):
+                isStraight1 = False
+
+    # if isFlush is False, check for just straight
+    isStraight1 = True
+    isStraight2 = True
+    isStraight3 = True
+    isStraight = False
+    i = 0
+    while i in range(4):
+        if SC[0 + i].rank != (SC[1 + i].rank - 1):
+            isStraight1 = False
+        
+        if SC[1 + i].rank != (SC[2 + i].rank - 1):
+            isStraight2 = False
+        
+        if SC[2 + i].rank != (SC[3 + i].rank - 1):
+            isStraight3 = False
+        
+        i += 1
+    if (isStraight1 or isStraight2 or isStraight3):
+        isStraight = True
+
+    
+    return isStraight, isFlush
 
 # randome decision to call/raise/fold since i havent implemented anything futher
 # adding logic for a bet size basic adding and subtracting from current balance and current bet
