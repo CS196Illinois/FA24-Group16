@@ -67,7 +67,7 @@ button:hover {
 }
 
 .card { 
-    display: inline-block; 
+    position: absolute;
     width: 50px; 
     height: 75px; 
     border: 1px solid #000; 
@@ -77,8 +77,19 @@ button:hover {
     font-size: 24px; 
     background-color: #f9f9f9; 
     border-radius: 5px; 
-	margin: 10px; 
+	margin: 10px;   
 } 
+
+.card:nth-child(1) {
+    bottom: 200px;  
+    left: 650px; 
+}
+
+.card:nth-child(2) {
+    bottom: 200px; 
+    left: 750px; 
+}
+
     
     
     
