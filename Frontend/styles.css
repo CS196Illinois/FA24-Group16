@@ -3,52 +3,53 @@ body {
     margin: 0;
     padding: 0;
     background-color: #f4f4f4;
-    }
+}
     
     
-    header {
+header {
     background: #000000;
     color: #fff;
     padding: 20px 0;
     text-align: center;
-    }
+}
     
     
-    h1 {
+h1 {
     margin: 0;
     font-size: 2.5em;
-    }
+}
     
     
-    h2 {
+h2 {
     color: #333;
-    }
+}
     
     
-    main {
+main {
     padding: 20px;
-    }
+}
     
     
-    section {
+section {
     margin: 20px 0;
     padding: 15px;
     background: #fff;
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
+}
     
     
-    .oval {
+.oval {
+    position: relative;
     width: 1000px;
     height: 500px;
     background: #00810d;
     border-radius: 250px;
     margin: auto;
-    }
+}
     
     
-    button {
+button {
     padding: 10px 15px;
     color: #fff;
     background: #000000;
@@ -58,12 +59,26 @@ body {
     font-size: 18px;
     font-family: 'Times New Roman', Times, serif;
     margin-right: 20px;
-    }
+}
     
     
-    button:hover {
+button:hover {
     background: #6e747b;
-    }
+}
+
+.card { 
+    display: inline-block; 
+    width: 50px; 
+    height: 75px; 
+    border: 1px solid #000; 
+    margin: 5px; 
+    text-align: center; 
+    line-height: 75px; 
+    font-size: 24px; 
+    background-color: #f9f9f9; 
+    border-radius: 5px; 
+	margin: 10px; 
+} 
     
     
     
