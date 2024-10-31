@@ -90,4 +90,13 @@ button:hover {
     border-radius: 5px; 
 	margin: 10px; 
 } 
-   
+
+.card:nth-child(1) {
+    bottom: 200px;  
+    left: 650px; 
+}
+
+.card:nth-child(2) {
+    bottom: 200px; 
+    left: 750px; 
+}
