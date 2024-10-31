@@ -3,6 +3,7 @@ const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'
  
 let deck = []; 
 let hand = []; 
+let communityCards = [];
  
 // Function to create a deck of cards 
 function createDeck() { 
@@ -22,23 +23,49 @@ function shuffleDeck() {
     } 
 } 
  
-// Function to deal 5 cards 
+// Function to deal 2 cards 
 function dealCards() { 
     hand = []; 
     for (let i = 0; i < 2; i++) { 
         hand.push(deck.pop()); 
     } 
 } 
- 
+
+// Function to deal the flop
+function dealFlop() {
+    communityCards = [];
+    for (let i = 0; i < 3; i++) {
+        communityCards.push(deck.pop());
+    }
+}
+// Function to deal the turn
+function dealTurn() {
+   communityCards.push(deck.pop());
+}
+
+//Function to deal the river
+function dealRiver() {
+    communityCards.push(deck.pop());
+}
+
 // Function to display the hand 
 function displayHand() { 
     const handDiv = document.getElementById('hand'); 
+    const communityDiv = document.getElementById('community');
     handDiv.innerHTML = ''; 
+    communityDiv.innerHTML = '';
     for (const card of hand) { 
         const cardDiv = document.createElement('div'); 
         cardDiv.className = 'card'; 
         cardDiv.textContent = card; 
         handDiv.appendChild(cardDiv); 
+    } 
+
+    for (const card of communityCards) { 
+        const cardDiv = document.createElement('div'); 
+        cardDiv.className = 'card'; 
+        cardDiv.textContent = card; 
+        communityDiv.appendChild(cardDiv); 
     } 
 } 
  
@@ -48,4 +75,19 @@ document.getElementById('deal-button').addEventListener('click', () => {
     shuffleDeck(); 
     dealCards(); 
     displayHand(); 
-}); 
+});
+
+document.getElementById('flop-button').addEventListener('click', () => { 
+    dealFlop();
+    displayHand();
+});
+
+document.getElementById('turn-button').addEventListener('click', () => { 
+    dealTurn();
+    displayHand();
+});
+
+document.getElementById('river-button').addEventListener('click', () => { 
+    dealRiver();
+    displayHand();
+});

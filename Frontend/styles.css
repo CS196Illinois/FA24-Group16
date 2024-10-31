@@ -67,7 +67,7 @@ button:hover {
 }
 
 
-#hand {
+#hand, #community {
     position: absolute; /* Position the hand container */
     bottom: 150px; /* Center vertically within the oval */
     left: 50%; /* Center horizontally within the oval */
@@ -76,6 +76,9 @@ button:hover {
     gap: 10px; /* Space between cards */
 }
 
+#community {
+    margin-bottom: 250px;
+}
 
 .card { 
     display: inline-block; 
@@ -99,4 +102,30 @@ button:hover {
 .card:nth-child(2) {
     bottom: 200px; 
     left: 750px; 
+} 
+
+.card:nth-child(3) {
+    bottom: 500px;  
+    left: 650px; 
 }
+
+.card:nth-child(4) {
+    bottom: 500px; 
+    left: 750px; 
+} 
+
+.card:nth-child(5) {
+    bottom: 500px;  
+    left: 650px; 
+}
+
+.card:nth-child(6) {
+    bottom: 200px; 
+    left: 850px; 
+} 
+
+.card:nth-child(7) {
+    bottom: 200px;  
+    left: 650px; 
+}
+
