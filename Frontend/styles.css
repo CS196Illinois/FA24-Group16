@@ -1,54 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=JQKAs+Wild&display=swap');
+
 body {
     font-family: 'Times New Roman', Times, serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: #1d1d1d; 
 }
-    
-    
+
 header {
     background: #000000;
     color: #fff;
     padding: 20px 0;
     text-align: center;
+    font-family: 'JQKAs Wild', cursive; 
 }
-    
-    
+
 h1 {
     margin: 0;
-    font-size: 2.5em;
+    font-size: 3em;
+    font-family: 'Lobster', cursive; 
+    color: #f4a261; 
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7); 
 }
-    
-    
+
 h2 {
-    color: #333;
+    color: white;
 }
-    
-    
 main {
     padding: 20px;
+    text-align: center;
 }
-    
-    
-section {
-    margin: 20px 0;
-    padding: 15px;
-    background: #fff;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-    
-    
+
 .oval {
     position: relative;
-    width: 1000px;
-    height: 500px;
-    background: #00810d;
+    width: 900px;
+    height: 450px;
+    background: #00810d; 
     border-radius: 250px;
-    margin: auto;
+    margin: 50px auto;
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    border: 10px solid #8e735b; 
 }
-    
-    
+
+#community {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    position: absolute;
+    bottom: 350px;
+    width: 100%;
+}
+
+#hand {
+    display: flex;
+    justify-content: center;  
+    gap: 15px;
+    position: absolute;
+    bottom: 150px; 
+    width: 100%;
+}
+
+.card {
+    width: 60px;
+    height: 90px;
+    border: 2px solid #000;
+    text-align: center;
+    line-height: 90px;
+    font-size: 24px;
+    background-color: #fff;
+    color: #000;
+    border-radius: 8px;
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s; 
+}
+
+.card:hover {
+    transform: scale(1.1); 
+}
+
 button {
     padding: 10px 15px;
     color: #fff;
@@ -60,80 +94,28 @@ button {
     font-family: 'Times New Roman', Times, serif;
     margin-right: 20px;
 }
-    
-    
+
 button:hover {
     background: #6e747b;
+    transform: scale(1.05); 
 }
 
-
-#hand, #community {
-    position: absolute; /* Position the hand container */
-    bottom: 150px; /* Center vertically within the oval */
-    left: 50%; /* Center horizontally within the oval */
-    transform: translate(-50%, -50%); /* Adjust to center */
-    display: flex; /* Use flexbox to align cards */
-    gap: 10px; /* Space between cards */
-}
-
-#community {
-    margin-bottom: 250px;
+.player {
+    text-align: center;
+    color: #fff;
+    font-size: 1.2em;
+    margin-top: 20px;
 }
 
 #fold-message {
-    color: red;
-    margin-top: 10px;
+    color: white;
     font-weight: bold;
     font-size: 50px;
     text-align: center;
-}
-
-.card { 
-    display: inline-block; 
-    width: 50px; 
-    height: 75px; 
-    border: 1px solid #000; 
-    margin: 5px; 
-    text-align: center; 
-    line-height: 75px; 
-    font-size: 24px; 
-    background-color: #f9f9f9; 
-    border-radius: 5px; 
-	margin: 10px; 
-} 
-
-.card:nth-child(1) {
-    bottom: 200px;  
-    left: 650px; 
-}
-
-.card:nth-child(2) {
-    bottom: 200px; 
-    left: 750px; 
-} 
-
-.card:nth-child(3) {
-    bottom: 500px;  
-    left: 650px; 
-}
-
-.card:nth-child(4) {
-    bottom: 500px; 
-    left: 750px; 
-} 
-
-.card:nth-child(5) {
-    bottom: 500px;  
-    left: 650px; 
-}
-
-.card:nth-child(6) {
-    bottom: 200px; 
-    left: 850px; 
-} 
-
-.card:nth-child(7) {
-    bottom: 200px;  
-    left: 650px; 
+    position: absolute;
+    top: 50%; /* Vertically center the message */
+    left: 50%; /* Horizontally center the message */
+    transform: translate(-50%, -50%); /* Adjust to perfectly center it */
+    width: 80%;
 }
 
