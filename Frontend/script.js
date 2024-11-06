@@ -68,13 +68,43 @@ function displayHand() {
         communityDiv.appendChild(cardDiv); 
     } 
 } 
- 
+
+ function resetBoard() {
+    communityCards = [];
+    const communityDiv = document.getElementById('community');
+    communityDiv.innerHTML= '';
+ }
+
+ function foldGame() {
+    hand = [];
+    communityCards = [];
+    const handDiv = document.getElementById('hand');
+    const communityDiv = document.getElementById('community');
+    handDiv.innerHTML = '';
+    communityDiv.innerHTML= '';
+
+    //Display fold message
+    let messageDiv = document.getElementById('fold-message');
+    if (!messageDiv) {
+        messageDiv = document.createElement('div');
+        messageDiv.id = 'fold-message';
+        document.body.appendChild(messageDiv); // Appending to body or main container
+    }
+    messageDiv.innerHTML = 'You folded. Bot wins!';
+ }
+
 // Event listener for the deal button 
 document.getElementById('deal-button').addEventListener('click', () => { 
+    resetBoard();
     createDeck(); 
     shuffleDeck(); 
     dealCards(); 
     displayHand(); 
+
+    const messageDiv = document.getElementById('fold-message');
+    if (messageDiv) {
+        messageDiv.remove();
+    }
 });
 
 document.getElementById('flop-button').addEventListener('click', () => { 
@@ -90,4 +120,8 @@ document.getElementById('turn-button').addEventListener('click', () => {
 document.getElementById('river-button').addEventListener('click', () => { 
     dealRiver();
     displayHand();
+});
+
+document.getElementById('fold-button').addEventListener('click', () => { 
+    foldGame();
 });
