@@ -25,18 +25,31 @@
                 <div class="card"></div>
             </div> 
         </section>
-            <h2>Bankroll: </h2>
+            <h2 id="pot-amount" style="color: white;">Pot Amount: $0</h2>
+            <h2 id="bankroll-amount">Bankroll: $1000</h2> 
         <section>
             <button id="deal-button">Next Hand</button>
             <button id="flop-button">Reveal Flop</button>
             <button id="turn-button">Reveal Turn</button>
             <button id="river-button">Reveal River</button>
             <button id="fold-button">Fold</button>
-            <script src="script.js"></script>
             <button>Check</button>
             <button>Call</button>
-            <button>Bet</button>
+            <button id="bet-button">Bet</button>
+            <!--new button for bet amount-->
+            <button id="bet-5" style="display: none;">$5</button>
+            <button id="bet-50" style="display: none;">$50</button>
+            <button id="bet-100" style="display: none;">$100</button>
         </section>
         </main>
+        <div id="bet-modal" class="modal-overlay">a
+            <div class="modal-content">
+                <h2>Select Bet Amount</h2>
+                <button id="bet-5">$5</button>
+                <button id="bet-50">$50</button>
+                <button id="bet-100">$100</button>
+            </div>
+        </div>
+        <script src="script.js"></script>
     </body>
 </html>
