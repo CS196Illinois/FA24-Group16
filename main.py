@@ -310,6 +310,7 @@ def texas_holdem():
                 return
             elif bot_move_choice == "call":
                 bot_balance -= current_bet  # match the current bet
+                current_bet += player_bet_amount
                 break  # end the betting loop if bot calls
             elif bot_move_choice == "raise":
                 current_bet += bot_raise_amount
