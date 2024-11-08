@@ -59,11 +59,175 @@ class Deck:
             dealt_cards.append(self.cards.pop())
         return dealt_cards
 
-# not sure how we want to do it yet but evaluate the hand strength
-def evaluate_hand(hand, community_cards):
-    # simple strength value that is the sum of hand + community cards right now
-    combined = hand + community_cards
-    return combined
+def evaluate_hand(hand, board_cards):
+    # Combines hand cards and board cards, then sorts it
+    combined = copy.deepcopy(hand) + copy.deepcopy(board_cards)
+    for i in range(len(combined)):
+        newRank = ranks.index(str(combined[i].rank)) + 2
+        combined[i].rank = newRank
+    SC = sorted(combined, key=lambda x: x.rank, reverse=False)
+    print("Sorted Total Cards: ", SC)
+
+
+    # Block 1: Checks for Flush and Straight (and records in a dictionary the frequency of each rank)
+    isFlush = False
+    HeartCount, DiaCount, ClubCount, SpadeCount = 0, 0, 0, 0
+    isStraight1, isStraight2, isStraight3, isStraight = True, True, True, False
+    rankFreqDict = {}
+    for i in range(len(SC)):
+        rankFreqDict.update({SC[i].rank : rankFreqDict.get(SC[i].rank, 0) + 1})
+
+        if (i < 4):
+            if SC[0 + i].rank != (SC[1 + i].rank - 1):
+                isStraight1 = False
+                
+            if SC[1 + i].rank != (SC[2 + i].rank - 1):
+                isStraight2 = False
+                
+            if SC[2 + i].rank != (SC[3 + i].rank - 1):
+                isStraight3 = False
+        
+        if (SC[i].suit == 'Hearts'):
+            HeartCount += 1
+        if (SC[i].suit == 'Clubs'):
+            ClubCount += 1
+        if (SC[i].suit == 'Spades'):
+            SpadeCount += 1
+        if (SC[i].suit == 'Diamonds'):
+            DiaCount += 1
+        
+    if (isStraight1 or isStraight2 or isStraight3):
+        if (isStraight3):
+            straightHigh = SC[6].rank
+        elif (isStraight2):
+            straightHigh = SC[5].rank
+        elif (isStraight1):
+            straightHigh = SC[4].rank
+        isStraight = True
+    
+    if (DiaCount >= 5 or HeartCount >= 5 or ClubCount >= 5 or SpadeCount >= 5):
+        isFlush = True
+        checkListForSF = []
+        for i in range(len(SC)):
+            if (DiaCount >= 5 and SC[i].suit == 'Diamonds'):
+                checkListForSF.append(SC[i])
+            if (HeartCount >= 5 and SC[i].suit == 'Hearts'):
+                checkListForSF.append(SC[i]) 
+            if (ClubCount >= 5 and SC[i].suit == 'Clubs'):
+                checkListForSF.append(SC[i]) 
+            if (SpadeCount >= 5 and SC[i].suit == 'Spades'):
+                checkListForSF.append(SC[i])            
+        flushHigh = checkListForSF[len(checkListForSF) - 1].rank
+    
+    # If isFlush is true, check for Straight flush
+    isStraightFlush, isRoyal = False, False
+    if isFlush == True:
+        isStraightFlush1 = True
+        isStraightFlush2 = True
+        isStraightFlush3 = True
+        if (len(checkListForSF) < 5):
+            raise Exception("checkListForSF should have a length of at least 5!")
+        for i in range(4):
+            if ((len(checkListForSF) >= 5) and (checkListForSF[0 + i].rank != (checkListForSF[1 + i].rank - 1))):
+                isStraightFlush1 = False
+            
+            if ((len(checkListForSF) >= 6) and (checkListForSF[1 + i].rank != (checkListForSF[2 + i].rank - 1))):
+                isStraightFlush2 = False
+            
+            if ((len(checkListForSF) >= 7) and (checkListForSF[2 + i].rank != (checkListForSF[3 + i].rank - 1))):
+                isStraightFlush3 = False
+        
+        if (len(checkListForSF) == 5 and isStraightFlush1):
+            isStraightFlush = True
+            sfHigh = checkListForSF[4].rank
+        if (len(checkListForSF) == 6 and (isStraightFlush1 or isStraightFlush2)):
+            isStraightFlush = True
+            if (isStraightFlush1):
+                sfHigh = checkListForSF[4].rank
+            if (isStraightFlush2):
+                sfHigh = checkListForSF[5].rank
+        if (len(checkListForSF) == 7 and (isStraightFlush1 or isStraightFlush2 or isStraightFlush3)):
+            isStraightFlush = True
+            if (isStraightFlush1):
+                sfHigh = checkListForSF[4].rank
+            if (isStraightFlush2):
+                sfHigh = checkListForSF[5].rank
+            if (isStraightFlush3):
+                sfHigh = checkListForSF[6].rank
+        
+
+    # If isStraightFlush is true, check for Royal flush
+    if isStraightFlush:
+        if (checkListForSF[len(checkListForSF - 1)].rank == 14):
+            isRoyal == True
+
+
+
+
+    # Block 2: Checks everything else: is it Quads? Full House? Etc?
+
+    ## Initializes booleans/indicatorRanks. The indicatorRanks (exact rank of cards in the hand type) are used in the final calculation of the exact index - distinguishes between pair of Aces, and pair of Jacks, for example.
+    isQuads, hasTrips, isFull, hasPair, isTwoPair = False, False, False, False, False
+    quadRank, tripRank, pairRankMax, pairRankSecond, highCard = 0, 0, 0, 0, SC[len(SC) - 1].rank
+    numOfPairs = 0
+
+    # Initial Loop. Checks for quads/pairs/trips.
+    for item in rankFreqDict:
+        if rankFreqDict[item] == 4:
+            isQuads = True
+            quadRank = item
+        if rankFreqDict[item] == 3: 
+            hasTrips = True
+            tripRank = item
+        if rankFreqDict[item] == 2:
+            hasPair = True
+            if (numOfPairs == 0):
+                pairRankMax = item
+            elif (numOfPairs == 1):
+                pairRankSecond = pairRankMax
+                pairRankMax = item
+            elif (numOfPairs >= 2):
+                pairRankSecond = pairRankMax
+                pairRankMax = item
+            numOfPairs += 1
+    
+    # If hasTrips or hasPair is true, this code will distinguish Full Houses and Two Pairs
+    if (hasTrips and hasPair):
+        isFull = True
+    if (numOfPairs >= 2):
+        isTwoPair = True
+    
+
+    # Block 3: Final Score Calculator!
+    scoreIndex = []
+    if isRoyal:
+        scoreIndex.append(840)
+    
+    if isStraightFlush:
+        scoreIndex.append(814 + sfHigh)
+    elif isFlush:
+        scoreIndex.append(421 + flushHigh)
+    elif isStraight:
+        scoreIndex.append(407 + straightHigh)
+
+    if isQuads:
+        scoreIndex.append(800 + quadRank)
+    elif isFull:
+        scoreIndex.append(435 + (14 * tripRank) + (13 * pairRankMax))
+    elif hasTrips:
+        scoreIndex.append(393 + tripRank)
+    elif isTwoPair:
+        scoreIndex.append(28 + (14 * pairRankMax) + (13* pairRankSecond))
+    elif hasPair:
+        scoreIndex.append(14 + pairRankMax)
+    else:
+        scoreIndex.append(highCard)
+        scoreIndex.append(SC[len(SC) - 2].rank)
+        scoreIndex.append(SC[len(SC) - 3].rank)
+        scoreIndex.append(SC[len(SC) - 4].rank)
+    
+    scoreIndex.sort(reverse=True)
+    return scoreIndex
 
 # bot decision to call/raise/fold, considering the current bet size and balance
 def bot_move(bot_balance, current_bet):
@@ -216,7 +380,7 @@ def texas_holdem():
 
     print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
 
-    # showdown phase
+    # if the game is still going after final betting round do the showdown aka show the players cards
     print("Showdown!")
     player_best_hand = evaluate_hand(player_hand, community_cards)
     bot_best_hand = evaluate_hand(bot_hand, community_cards)
@@ -224,15 +388,31 @@ def texas_holdem():
     print(f"Your hand: {player_best_hand}")
     print(f"Bot hand: {bot_best_hand}")
 
-    # determine winner (currently random)
-    if random.choice([True, False]):
+    # compare the hands, should return the higher hand - i havent added this yet right now its random still lol
+    # -- updated to change player/bot balances no need for subtraction since thats done by making bets in the first place
+    lenOfCompare = min(len(player_best_hand), len(bot_best_hand))
+    whoWon = "player"
+    for i in range(lenOfCompare):
+        if (player_best_hand[i] > bot_best_hand[i]):
+            whoWon = "player"
+            break
+        elif (bot_best_hand[i] > player_best_hand[i]):
+            whoWon = "bot"
+            break
+        else:
+            whoWon = "draw"
+
+    if (whoWon == "player"):
         print("You win the round!")
-        player_balance += current_bet * 2
-    else:
+        player_balance += current_bet * 2 # just multiplied times the number of players aka 2
+    elif (whoWon == "bot"):
         print("Bot wins the round!")
-        bot_balance += current_bet * 2
+        bot_balance += current_bet * 2 # same logic as ^
+    elif (whoWon == "draw"):
+        print("Tie!")
+        player_balance += current_bet
+        bot_balance += current_bet
 
     print(f"Your balance: ${player_balance}, Bot balance: ${bot_balance}")
-
 # start a game
 texas_holdem()
