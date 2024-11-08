@@ -32,6 +32,7 @@ current hand + community cards - sum up the ranks
 '''
 
 import random
+import copy
 
 # formating the deck of cards
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
