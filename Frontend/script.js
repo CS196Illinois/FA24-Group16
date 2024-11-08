@@ -4,6 +4,8 @@ const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'
 let deck = []; 
 let hand = []; 
 let communityCards = [];
+let pot = 0;
+let bankroll = 1000;
  
 // Function to create a deck of cards 
 function createDeck() { 
@@ -101,6 +103,8 @@ document.getElementById('deal-button').addEventListener('click', () => {
     dealCards(); 
     displayHand(); 
 
+    pot = 0;
+    updatePotDisplay();
     const messageDiv = document.getElementById('fold-message');
     if (messageDiv) {
         messageDiv.remove();
@@ -125,3 +129,49 @@ document.getElementById('river-button').addEventListener('click', () => {
 document.getElementById('fold-button').addEventListener('click', () => { 
     foldGame();
 });
+
+// Modal functionality
+const betModal = document.getElementById('bet-modal');
+const betButton = document.getElementById('bet-button');
+
+betButton.addEventListener('click', () => {
+  betModal.style.display = 'flex';
+});
+
+function closeModal() {
+  betModal.style.display = 'none';
+}
+
+// Event listeners for bet amount buttons
+document.querySelector('.modal-content button:nth-child(2)').addEventListener('click', () => {
+  placeBet(5);
+});
+document.querySelector('.modal-content button:nth-child(3)').addEventListener('click', () => {
+  placeBet(50);
+});
+document.querySelector('.modal-content button:nth-child(4)').addEventListener('click', () => {
+  placeBet(100);
+});
+
+// Update pot display
+function updatePotDisplay() {
+  document.getElementById('pot-amount').textContent = `Pot Amount: $${pot}`;
+}
+
+// Update bankroll display
+function updateBankrollDisplay() {
+    document.getElementById('bankroll-amount').textContent = `Bankroll: $${bankroll}`;
+}
+
+// Place bet and update pot
+function placeBet(amount) {
+    if (amount <= bankroll) {
+        pot += amount;
+        bankroll -= amount;
+        closeModal();
+        updatePotDisplay();
+        updateBankrollDisplay();
+    } else {
+        alert("Insufficient funds!")
+    }
+}
