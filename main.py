@@ -29,6 +29,8 @@ current hand + community cards - sum up the ranks
     - run is_sraight() and is_flush() if both == true we have a royal_flush()
     - run is...
 
+    
+// custom betting amounts for front end dev
 '''
 
 import random
@@ -231,167 +233,184 @@ def evaluate_hand(hand, board_cards):
     return scoreIndex
 
 # bot decision to call/raise/fold, considering the current bet size and balance
-def bot_move(bot_balance, current_bet):
-    if bot_balance <= current_bet:
-        return "call", 0  # bot goes all in if it can't raise further
+def bot_move(bot_balance, current_bet, total_pot, current_player_bet):
+    bet_to_call = current_player_bet - current_bet  # amount bot needs to call
+    
+    if bot_balance <= bet_to_call:
+        return "call", 0  # bot goes all in if it can't call
+    
     decision = random.choice(['call', 'raise', 'fold'])
     if decision == 'raise':
         raise_amount = random.choice([5, 10, 50])
-        if bot_balance >= current_bet + raise_amount:
+        # bot needs to call first, then add raise amount
+        total_raise = bet_to_call + raise_amount
+        if bot_balance >= total_raise:
             return 'raise', raise_amount
         else:
-            return 'call', 0  # calls if raise attempt isn't affordable
-    return decision, 0  # default is to call or fold
+            return 'call', 0
+    return decision, 0
 
-# player's move with option to call the current bet or raise it
-def player_bet(player_balance, current_bet):
-    if current_bet == 0:
-        move = input(f"Your move (check, bet, fold). Your balance: ${player_balance}: ").strip().lower()
+def format_bot_message(move, bet_amount, current_player_bet, bot_current_bet):
+    bet_to_call = current_player_bet - bot_current_bet
+    if move == 'call':
+        if bet_to_call > 0:
+            return f"Bot decides to call ${bet_to_call}"
+        return "Bot decides to check"
+    elif move == 'raise':
+        if bet_to_call > 0:
+            return f"Bot decides to call ${bet_to_call} and raise ${bet_amount}"
+        return f"Bot decides to raise ${bet_amount}"
+    elif move == 'fold':
+        return "Bot decides to fold"
+    return ""
+
+def player_bet(player_balance, current_bet, total_pot, current_bot_bet):
+    bet_to_call = current_bot_bet - current_bet  # amount needed to call
+    
+    if current_bot_bet == 0:
+        move = input(f"Your move (check, bet, fold). Your balance: ${player_balance}, Pot: ${total_pot}: ").strip().lower()
         while move not in ['check', 'bet', 'fold']:
             move = input("Invalid move. Choose 'check', 'bet', or 'fold': ").strip().lower()
     else:
-        move = input(f"Your move (call, raise, fold). Current bet: ${current_bet}, Your balance: ${player_balance}: ").strip().lower()
+        move = input(f"Your move (call, raise, fold). Need ${bet_to_call} to call. Your balance: ${player_balance}, Pot: ${total_pot}: ").strip().lower()
         while move not in ['call', 'raise', 'fold']:
             move = input("Invalid move. Choose 'call', 'raise', or 'fold': ").strip().lower()
 
     if move == 'bet' or move == 'raise':
+        if move == 'raise':
+            print(f"You need to call ${bet_to_call} plus your raise amount")
         bet_amount = int(input("Choose your bet/raise amount (5, 10, 50): "))
-        while bet_amount not in [5, 10, 50] or bet_amount > player_balance:
-            bet_amount = int(input("Invalid amount. Choose 5, 10, or 50 within your balance: "))
+        while bet_amount not in [5, 10, 50] or (bet_amount + bet_to_call) > player_balance:
+            bet_amount = int(input("Invalid amount. Choose 5, 10, or 50 within your balance (including call amount): "))
         return move, bet_amount
     return move, 0
 
-# individual game function
 def texas_holdem():
-    # creating a deck
     deck = Deck()
-    # giving player cards
     player_hand = deck.deal(2)
-    # giving bot cards
     bot_hand = deck.deal(2)
     community_cards = []
-    # giving the player and bot a starting balance
-    player_balance = 500  # $500 usd
+    player_balance = 500
     bot_balance = 500
+    total_pot = 0
+
+    # define betting rounds here
+    betting_rounds = ['pre-flop', 'flop', 'turn', 'river']
 
     print(f"Your hand: {player_hand}")
     print(f"Bot hand: [hidden]")
 
-    # pre flop betting round 1
-    current_bet = 0
-    print("Pre-flop betting")
-    last_move = None  # track last move to determine the turn
-    player_move = None
-    player_bet_amount = 0
-    bot_bet_amount = 0
+    # track individual bets for this round
+    player_current_bet = 0
+    bot_current_bet = 0
 
-    while True:
-        if last_move == "bot":
-            player_move, player_bet_amount = player_bet(player_balance, current_bet)
-            last_move = "player"
+    for round_name in betting_rounds:
+        print(f"\n{round_name.upper()} betting round")
 
-            if player_move == "fold":
+        if round_name == 'pre-flop':
+            # pre-flop phase: no community cards
+            community_cards = []
+        elif round_name == 'flop':
+            community_cards += deck.deal(3)
+            print(f"Community cards after flop: {community_cards}")
+        elif round_name in ['turn', 'river']:
+            community_cards += deck.deal(1)
+            print(f"Community cards after {round_name}: {community_cards}")
+
+        # reste round-specific bets
+        player_current_bet = 0
+        bot_current_bet = 0
+        betting_active = True
+        last_raiser = None
+        consecutive_checks = 0  # track if both players check consecutively
+
+        while betting_active:
+            # player's turn
+            player_move, player_bet_amount = player_bet(player_balance, player_current_bet, total_pot, bot_current_bet)
+
+            if player_move == 'fold':
                 print("You folded. Bot wins!")
+                bot_balance += total_pot
                 return
-            elif player_move == "call":
-                player_balance -= current_bet  # match the current bet
-                current_bet += bot_raise_amount
-                break  # end the betting loop if player calls
-            elif player_move == "raise":
-                current_bet += player_bet_amount
-                player_balance -= player_bet_amount
-        else:
-            bot_move_choice, bot_raise_amount = bot_move(bot_balance, current_bet)
-            print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
-            last_move = "bot"
+            elif player_move in ['call', 'check']:
+                amount_to_call = bot_current_bet - player_current_bet
+                if player_balance <= amount_to_call:
+                    amount_to_call = player_balance  # all-in
+                player_balance -= amount_to_call
+                player_current_bet += amount_to_call
+                total_pot += amount_to_call
 
-            if bot_move_choice == "fold":
+                if player_move == 'check':
+                    consecutive_checks += 1
+                else:
+                    consecutive_checks = 0
+            elif player_move in ['bet', 'raise']:
+                amount_to_call = bot_current_bet - player_current_bet
+                total_bet = amount_to_call + player_bet_amount
+                player_balance -= total_bet
+                player_current_bet += total_bet
+                total_pot += total_bet
+                last_raiser = 'player'
+                consecutive_checks = 0  # reset if player raises
+
+            # bot's turn
+            bot_move_choice, bot_raise_amount = bot_move(bot_balance, bot_current_bet, total_pot, player_current_bet)
+            print("\n" + format_bot_message(bot_move_choice, bot_raise_amount, player_current_bet, bot_current_bet))
+
+            if bot_move_choice == 'fold':
                 print("Bot folded. You win!")
+                player_balance += total_pot
                 return
-            elif bot_move_choice == "call":
-                bot_balance -= current_bet  # match the current bet
-                current_bet += player_bet_amount
-                break  # end the betting loop if bot calls
-            elif bot_move_choice == "raise":
-                current_bet += bot_raise_amount
-                bot_balance -= bot_raise_amount
+            elif bot_move_choice in ['call', 'check']:
+                amount_to_call = player_current_bet - bot_current_bet
+                if bot_balance <= amount_to_call:
+                    amount_to_call = bot_balance  # all-in
+                    print(f"Bot is ALL IN with ${amount_to_call}!")
+                bot_balance -= amount_to_call
+                bot_current_bet += amount_to_call
+                total_pot += amount_to_call
 
-    # the flop - deal 3 community cards
-    community_cards += deck.deal(3)
-    print(f"Community cards after flop: {community_cards}")
+                if bot_move_choice == 'check':
+                    consecutive_checks += 1
+                else:
+                    consecutive_checks = 0
+            elif bot_move_choice == 'raise':
+                amount_to_call = player_current_bet - bot_current_bet
+                total_bet = amount_to_call + bot_raise_amount
+                bot_balance -= total_bet
+                bot_current_bet += total_bet
+                total_pot += total_bet
+                last_raiser = 'bot'
+                consecutive_checks = 0  # reset if bot raises
 
-    # flop betting round 2
-    print("Flop betting")
-    player_move, player_bet_amount = player_bet(player_balance, current_bet)
-    bot_move_choice, bot_raise_amount = bot_move(bot_balance, current_bet)
+            print(f"Current pot: ${total_pot}")
+            print(f"Your balance: ${player_balance}, Bot balance: ${bot_balance}")
 
-    if player_move == 'fold':
-        print("You folded. Bot wins!")
-        return
-    elif bot_move_choice == 'fold':
-        print("Bot folded. You win!")
-        return
-    else:
-        current_bet += max(player_bet_amount, bot_raise_amount)
-        player_balance -= player_bet_amount
-        bot_balance -= bot_raise_amount
+            # check if both players have checked consecutively or one has called and the other checked
+            if consecutive_checks >= 2 or (player_move == 'call' and bot_move_choice == 'check') or (bot_move_choice == 'call' and player_move == 'check'):
+                print(f"\nBoth players have completed the betting round. Moving to the next stage: {round_name.upper()}.")
+                betting_active = False
 
-    print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
+        # after betting round, move to next stage by dealing community cards (if necessary)
+        if round_name == 'pre-flop':  # if it's the pre-flop, go to the flop round
+            print("Both players checked or completed their actions. Moving to the next stage: the flop.")
+        else:
+            print(f"Dealing community cards after {round_name}.")
+            continue  # next stage (flop, turn, river)
 
-    # turn - deal another community card
-    community_cards += deck.deal(1)
-    print(f"Community cards after turn: {community_cards}")
+    # showdown logic
+    print("\nShowdown!")
+    print(f"Your hand: {player_hand}")
+    print(f"Bot hand: {bot_hand}")
+    print(f"Community cards: {community_cards}")
 
-    # turn betting round 3
-    print("Turn betting")
-    player_move, player_bet_amount = player_bet(player_balance, current_bet)
-    bot_move_choice, bot_raise_amount = bot_move(bot_balance, current_bet)
-
-    if player_move == 'fold':
-        print("You folded. Bot wins!")
-        return
-    elif bot_move_choice == 'fold':
-        print("Bot folded. You win!")
-        return
-    else:
-        current_bet += max(player_bet_amount, bot_raise_amount)
-        player_balance -= player_bet_amount
-        bot_balance -= bot_raise_amount
-
-    print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
-
-    # river - deal final community card
-    community_cards += deck.deal(1)
-    print(f"Community cards after river: {community_cards}")
-
-    # river betting round 4
-    print("Final betting (river)")
-    player_move, player_bet_amount = player_bet(player_balance, current_bet)
-    bot_move_choice, bot_raise_amount = bot_move(bot_balance, current_bet)
-
-    if player_move == 'fold':
-        print("You folded. Bot wins!")
-        return
-    elif bot_move_choice == 'fold':
-        print("Bot folded. You win!")
-        return
-    else:
-        current_bet += max(player_bet_amount, bot_raise_amount)
-        player_balance -= player_bet_amount
-        bot_balance -= bot_raise_amount
-
-    print(f"Bot chooses to {bot_move_choice}, Bet: {bot_raise_amount}")
-
-    # if the game is still going after final betting round do the showdown aka show the players cards
-    print("Showdown!")
     player_best_hand = evaluate_hand(player_hand, community_cards)
     bot_best_hand = evaluate_hand(bot_hand, community_cards)
 
-    print(f"Your hand: {player_best_hand}")
-    print(f"Bot hand: {bot_best_hand}")
+    print(f"Your best hand: {player_best_hand}")
+    print(f"Bot best hand: {bot_best_hand}")
 
-    # compare the hands, should return the higher hand - i havent added this yet right now its random still lol
-    # -- updated to change player/bot balances no need for subtraction since thats done by making bets in the first place
+    # comparison logic
     lenOfCompare = min(len(player_best_hand), len(bot_best_hand))
     whoWon = "player"
     for i in range(lenOfCompare):
@@ -404,17 +423,23 @@ def texas_holdem():
         else:
             whoWon = "draw"
 
-    if (whoWon == "player"):
+    # award pot to winner
+    if whoWon == "player":
         print("You win the round!")
-        player_balance += current_bet * 2 # just multiplied times the number of players aka 2
-    elif (whoWon == "bot"):
+        player_balance += total_pot
+    elif whoWon == "bot":
         print("Bot wins the round!")
-        bot_balance += current_bet * 2 # same logic as ^
-    elif (whoWon == "draw"):
-        print("Tie!")
-        player_balance += current_bet
-        bot_balance += current_bet
+        bot_balance += total_pot
+    else:
+        print("Tie! Splitting the pot")
+        split_amount = total_pot // 2
+        player_balance += split_amount
+        bot_balance += split_amount
+        # handle odd chip if pot is odd
+        if total_pot % 2 == 1:
+            player_balance += 1  # give odd chip to player
 
-    print(f"Your balance: ${player_balance}, Bot balance: ${bot_balance}")
+    print(f"Final balances - You: ${player_balance}, Bot: ${bot_balance}")
+
 # start a game
 texas_holdem()
