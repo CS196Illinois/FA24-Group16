@@ -243,11 +243,10 @@ def evaluate_hand(hand, board_cards):
         scoreIndex.append(28 + (14 * pairRankMax) + (13* pairRankSecond))
     elif hasPair:
         scoreIndex.append(14 + pairRankMax)
-    else:
-        scoreIndex.append(highCard)
-        scoreIndex.append(SC[len(SC) - 2].rank)
-        scoreIndex.append(SC[len(SC) - 3].rank)
-        scoreIndex.append(SC[len(SC) - 4].rank)
+    scoreIndex.append(highCard)
+    scoreIndex.append(SC[len(SC) - 2].rank)
+    scoreIndex.append(SC[len(SC) - 3].rank)
+    scoreIndex.append(SC[len(SC) - 4].rank)
     
     scoreIndex.sort(reverse=True)
     return scoreIndex
@@ -318,13 +317,11 @@ def texas_holdem(player_bal, bot_bal):
     print(f"Your hand: {player_hand}")
     print(f"Bot hand: [hidden]")
 
-
     # pre flop betting round 1
     playerBetPreFlop = 0
     botBetPreFlop = 0
     print("\n\nPre-flop betting")
     last_move = random.choice(["player","bot"])  # track last move to determine the turn
-    player_move = None
     initialPlays = 2
 
     # Right now it uses this while loop, which is the same throughout all the betting stages.
@@ -338,7 +335,7 @@ def texas_holdem(player_bal, bot_bal):
             if player_move == "fold":
                 print("You folded. Bot wins!")
                 print(player_balance, bot_balance)
-                bot_balance += playerBetPreFlop + botBetPreFlop
+                bot_balance += playerBetPreFlop + botBetPreFlop + playerBetContribution + botBetContribution
                 print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif player_move == "call":
@@ -348,16 +345,23 @@ def texas_holdem(player_bal, bot_bal):
                 aiParameterList[2] = playerBetPreFlop
                 break  # end the betting loop if player calls
             elif player_move == "raise" or player_move == "bet":
-                playerBetPreFlop = botBetPreFlop + player_bet_amount
-                player_balance -= player_bet_amount
+                if (player_move == "bet"):
+                    playerBetPreFlop = player_bet_amount
+                    player_balance -= playerBetPreFlop 
+                elif (player_move == "raise"):
+                    betDiff = botBetPreFlop - playerBetPreFlop
+                    player_balance -= (betDiff + player_bet_amount)
+                    playerBetPreFlop = botBetPreFlop + player_bet_amount
         else:
             bot_move_choice, bot_raise_amount = bot_move(bot_balance, playerBetPreFlop, botBetPreFlop)
             last_move = "bot"
 
-            if bot_move_choice == "fold":
+            if bot_move_choice == "check":
+                print(f"Bot chooses to {bot_move_choice}")
+            elif bot_move_choice == "fold":
                 print("Bot folded. You win!")
                 print(player_balance, bot_balance)
-                player_balance += playerBetPreFlop + botBetPreFlop
+                player_balance += playerBetPreFlop + botBetPreFlop + playerBetContribution + botBetContribution
                 print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif bot_move_choice == "call":
@@ -367,11 +371,14 @@ def texas_holdem(player_bal, bot_bal):
                 print(f"Bot chooses to {bot_move_choice}, Bet: {botBetPreFlop}")
                 break  # end the betting loop if bot calls
             elif bot_move_choice == "raise" or bot_move_choice == "bet":
-                botBetPreFlop = playerBetPreFlop + bot_raise_amount
-                bot_balance -= bot_raise_amount
                 if bot_move_choice == "bet":
+                    botBetPreFlop = bot_raise_amount
+                    bot_balance -= botBetPreFlop
                     print(f"Bot chooses to {bot_move_choice} {bot_raise_amount}")
-                if bot_move_choice == "raise":
+                elif bot_move_choice == "raise":
+                    betDiff = playerBetPreFlop - botBetPreFlop
+                    bot_balance -= (betDiff + bot_raise_amount)
+                    botBetPreFlop = playerBetPreFlop + bot_raise_amount
                     print(f"Bot chooses to {bot_move_choice} by {bot_raise_amount}")
         initialPlays -= 1
     
@@ -404,7 +411,7 @@ def texas_holdem(player_bal, bot_bal):
             if player_move == "fold":
                 print("You folded. Bot wins!")
                 print(player_balance, bot_balance)
-                bot_balance += playerBetFlop + botBetFlop
+                bot_balance += playerBetFlop + botBetFlop + playerBetContribution + botBetContribution
                 print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif player_move == "call":
@@ -414,8 +421,13 @@ def texas_holdem(player_bal, bot_bal):
                 aiParameterList[3] = playerBetFlop
                 break  # end the betting loop if player calls
             elif player_move == "raise" or player_move == "bet":
-                playerBetFlop = botBetFlop + player_bet_amount
-                player_balance -= player_bet_amount
+                if (player_move == "bet"):
+                    playerBetFlop = player_bet_amount
+                    player_balance -= playerBetFlop 
+                elif (player_move == "raise"):
+                    betDiff = botBetFlop - playerBetFlop
+                    player_balance -= (betDiff + player_bet_amount)
+                    playerBetFlop = botBetFlop + player_bet_amount
         else:
             bot_move_choice, bot_raise_amount = bot_move(bot_balance, playerBetFlop, botBetFlop)
             last_move = "bot"
@@ -425,7 +437,7 @@ def texas_holdem(player_bal, bot_bal):
             if bot_move_choice == "fold":
                 print("Bot folded. You win!")
                 print(player_balance, bot_balance)
-                player_balance += playerBetFlop + botBetFlop
+                player_balance += playerBetFlop + botBetFlop + playerBetContribution + botBetContribution
                 print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif bot_move_choice == "call":
@@ -435,15 +447,17 @@ def texas_holdem(player_bal, bot_bal):
                 print(f"Bot chooses to {bot_move_choice}, Bet: {botBetFlop}")
                 break  # end the betting loop if bot calls
             elif bot_move_choice == "raise" or bot_move_choice == "bet":
-                botBetFlop = playerBetFlop + bot_raise_amount
-                bot_balance -= bot_raise_amount
                 if bot_move_choice == "bet":
+                    botBetFlop = bot_raise_amount
+                    bot_balance -= botBetFlop
                     print(f"Bot chooses to {bot_move_choice} {bot_raise_amount}")
-                if bot_move_choice == "raise":
+                elif bot_move_choice == "raise":
+                    betDiff = playerBetFlop - botBetFlop
+                    bot_balance -= (betDiff + bot_raise_amount)
+                    botBetFlop = playerBetFlop + bot_raise_amount
                     print(f"Bot chooses to {bot_move_choice} by {bot_raise_amount}")
         initialPlays -= 1
-    
-    totalPot += (playerBetFlop + botBetFlop)
+
     playerBetContribution += playerBetFlop
     botBetContribution += botBetFlop
     totalPot += (playerBetFlop + botBetFlop)
@@ -473,7 +487,7 @@ def texas_holdem(player_bal, bot_bal):
             if player_move == "fold":
                 print("You folded. Bot wins!")
                 print(player_balance, bot_balance)
-                bot_balance += playerBetTurn + botBetTurn
+                bot_balance += playerBetTurn + botBetTurn + playerBetContribution + botBetContribution
                 print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif player_move == "call":
@@ -483,8 +497,13 @@ def texas_holdem(player_bal, bot_bal):
                 aiParameterList[4] = playerBetTurn
                 break  # end the betting loop if player calls
             elif player_move == "raise" or player_move == "bet":
-                playerBetTurn = botBetTurn + player_bet_amount
-                player_balance -= player_bet_amount
+                if (player_move == "bet"):
+                    playerBetTurn = player_bet_amount
+                    player_balance -= playerBetTurn
+                elif (player_move == "raise"):
+                    betDiff = botBetTurn - playerBetTurn
+                    player_balance -= (betDiff + player_bet_amount)
+                    playerBetTurn = botBetTurn + player_bet_amount
         else:
             bot_move_choice, bot_raise_amount = bot_move(bot_balance, playerBetTurn, botBetTurn)
             last_move = "bot"
@@ -493,7 +512,7 @@ def texas_holdem(player_bal, bot_bal):
                 print(f"Bot chooses to {bot_move_choice}")
             if bot_move_choice == "fold":
                 print("Bot folded. You win!")
-                player_balance += playerBetTurn + botBetTurn
+                player_balance += playerBetTurn + botBetTurn + playerBetContribution + botBetContribution
                 return player_balance, bot_balance
             elif bot_move_choice == "call":
                 betDiff = playerBetTurn - botBetTurn
@@ -502,15 +521,17 @@ def texas_holdem(player_bal, bot_bal):
                 print(f"Bot chooses to {bot_move_choice}, Bet: {botBetTurn}")
                 break  # end the betting loop if bot calls
             elif bot_move_choice == "raise" or bot_move_choice == "bet":
-                botBetTurn = playerBetTurn + bot_raise_amount
-                bot_balance -= bot_raise_amount
                 if bot_move_choice == "bet":
+                    botBetTurn = bot_raise_amount
+                    bot_balance -= botBetTurn
                     print(f"Bot chooses to {bot_move_choice} {bot_raise_amount}")
-                if bot_move_choice == "raise":
+                elif bot_move_choice == "raise":
+                    betDiff = playerBetTurn - botBetTurn
+                    bot_balance -= (betDiff + bot_raise_amount)
+                    botBetTurn = playerBetTurn + bot_raise_amount
                     print(f"Bot chooses to {bot_move_choice} by {bot_raise_amount}")
         initialPlays -= 1
     
-    totalPot += (playerBetTurn + botBetTurn)
     playerBetContribution += playerBetTurn
     botBetContribution += botBetTurn
     totalPot += (playerBetTurn + botBetTurn)
@@ -541,7 +562,7 @@ def texas_holdem(player_bal, bot_bal):
             if player_move == "fold":
                 print("You folded. Bot wins!")
                 print(player_balance, bot_balance)
-                bot_balance += playerBetRiver + botBetRiver
+                bot_balance += playerBetRiver + botBetRiver + playerBetContribution + botBetContribution
                 print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif player_move == "call":
@@ -551,8 +572,13 @@ def texas_holdem(player_bal, bot_bal):
                 aiParameterList[5] = playerBetRiver
                 break  # end the betting loop if player calls
             elif player_move == "raise" or player_move == "bet":
-                playerBetRiver = botBetRiver + player_bet_amount
-                player_balance -= player_bet_amount
+                if (player_move == "bet"):
+                    playerBetRiver = player_bet_amount
+                    player_balance -= playerBetRiver
+                elif (player_move == "raise"):
+                    betDiff = botBetRiver - playerBetRiver
+                    player_balance -= (betDiff + player_bet_amount)
+                    playerBetRiver = botBetRiver + player_bet_amount
         else:
             bot_move_choice, bot_raise_amount = bot_move(bot_balance, playerBetRiver, botBetRiver)
             last_move = "bot"
@@ -562,7 +588,7 @@ def texas_holdem(player_bal, bot_bal):
             if bot_move_choice == "fold":
                 print("Bot folded. You win!")
                 print(player_balance, bot_balance)
-                player_balance += playerBetRiver + botBetRiver
+                player_balance += playerBetRiver + botBetRiver + playerBetContribution + botBetContribution
                 print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif bot_move_choice == "call":
@@ -572,15 +598,17 @@ def texas_holdem(player_bal, bot_bal):
                 print(f"Bot chooses to {bot_move_choice}, Bet: {botBetRiver}")
                 break  # end the betting loop if bot calls
             elif bot_move_choice == "raise" or bot_move_choice == "bet":
-                botBetRiver = playerBetRiver + bot_raise_amount
-                bot_balance -= bot_raise_amount
                 if bot_move_choice == "bet":
+                    botBetRiver = bot_raise_amount
+                    bot_balance -= botBetRiver
                     print(f"Bot chooses to {bot_move_choice} {bot_raise_amount}")
-                if bot_move_choice == "raise":
+                elif bot_move_choice == "raise":
+                    betDiff = playerBetRiver - botBetRiver
+                    bot_balance -= (betDiff + bot_raise_amount)
+                    botBetRiver = playerBetRiver + bot_raise_amount
                     print(f"Bot chooses to {bot_move_choice} by {bot_raise_amount}")
         initialPlays -= 1
     
-    totalPot += (playerBetRiver + botBetRiver)
     playerBetContribution += playerBetRiver
     botBetContribution += botBetRiver
     totalPot += (playerBetRiver + botBetRiver)
