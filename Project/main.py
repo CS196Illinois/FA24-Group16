@@ -8,6 +8,10 @@ from numpy.linalg import norm
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
+# Parameter List for AI evaluation. Right now, they will be: handStrength, boardRisk, oppBetPF, then more oppBets depending on the stage
+aiParameterList = [0, 0, 0]
+numBaseParameters = 3
+
 preFlopDatabase = []
 preFlopEVs = {}
 flopDatabase = []
