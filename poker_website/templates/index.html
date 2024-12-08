@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AI Poker Bot</title>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='styles.css') }}"
+        />
+    </head>
+    <body>
+        <header>
+            <h1>Texas Code'Em Poker Bot</h1>
+        </header>
+        <main>
+            <section>
+                <div class="oval">
+                    <!-- Bot's hand will be displayed here -->
+                    <div id="bot-hand"></div>
+
+                    <!-- Community cards -->
+                    <div id="community"></div>
+
+                    <!-- Player's hand -->
+                    <div id="hand"></div>
+                </div>
+            </section>
+
+            <section>
+                <div id="chips-container">
+                    <div class="chip-display">
+                        <div class="pokerchip white"></div>
+                        <p id="white-chip-count">x0</p>
+                    </div>
+                    <div class="chip-display">
+                        <div class="pokerchip red"></div>
+                        <p id="red-chip-count">x0</p>
+                    </div>
+                    <div class="chip-display">
+                        <div class="pokerchip blue"></div>
+                        <p id="blue-chip-count">x0</p>
+                    </div>
+                    <div class="chip-display">
+                        <div class="pokerchip green"></div>
+                        <p id="green-chip-count">x0</p>
+                    </div>
+                    <div class="chip-display">
+                        <div class="pokerchip black"></div>
+                        <p id="black-chip-count">x0</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 id="pot-amount" style="color: white">Pot Amount: $0</h2>
+                <h2 id="bankroll-amount">Player Balance: $1000</h2>
+            </section>
+
+            <section>
+                <button id="deal-button">Next Hand</button>
+                <button id="flop-button">Reveal Flop</button>
+                <button id="turn-button">Reveal Turn</button>
+                <button id="river-button">Reveal River</button>
+                <button id="fold-button">Fold</button>
+                <button id="check-button">Check</button>
+                <button id="call-button">Call</button>
+                <button id="bet-button">Bet</button>
+                <button id="showdown-button">Showdown</button>
+            </section>
+        </main>
+
+        <!-- Betting Modal -->
+        <div id="bet-modal" class="modal">
+            <div class="modal-content">
+                <h2>Select Bet Amount</h2>
+                <div class="bet-buttons">
+                    <button id="bet-1">$1</button>
+                    <button id="bet-5">$5</button>
+                    <button id="bet-25">$25</button>
+                    <button id="bet-50">$50</button>
+                    <button id="bet-100">$100</button>
+                    <button id="bet-other">Other</button>
+                </div>
+                <button onclick="closeModal()" class="close-button">
+                    Close
+                </button>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+    </body>
+</html>
