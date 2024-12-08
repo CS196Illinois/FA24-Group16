@@ -1,47 +1,12 @@
-"""
-Ok guys, right now i have a basic poker game setup with python, this is meant to be a one v one against a bot.
-right now, all of the bots decisions are random, like e.g. check, bet, fold and at the end of a full round aka
-the river/community are all shown and a showdown has occured or someone has folded, it randomly decides the
-winner with a simpel true or false.
-
-Also, I have not added in bet size logic or the logic for evaluating_hands() which would be run when a showdown
-occurs. i think the evaluating hands should not be too bad to implement, but i am working on the bet size right
-now, i think i will just need to initilize each player with a ceratin total money value and then increment/decrement
-the value by the bet - a little restuctruing of my player_bet(), bot_move(), evaluate_hand() function and the main
-texas_holdem() function.
-"""
-
-"""
-10/17/24 v2 update
--- implemented a money system
-
--- still need to implement cycles aka when i bet and bot raisees we go again in the same stage
-=======
->>>>>>> 47581553507fd4ef1d489fa318a546f0ea29c1c5
--- still need card evaluation logic
--- still need bot betting logic (can be based on card evalutaion logic)
--- still need to implement a database for storing past games for modeltraining purposes
-"""
-
-'''
-final showdown:
-current hand + community cards - sum up the ranks
-    - run is_sraight() and is_flush() if both == true we have a royal_flush()
-    - run is...
-
-'''
-
 import random
 import copy
 import csv
+import numpy as np
+from numpy.linalg import norm
 
 # formating the deck of cards
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-
-# Parameter List for AI evaluation. Right now, they will be: handStrength, boardRisk, oppBetPF, then more oppBets depending on the stage
-aiParameterList = [0, 0, 0]
-numBaseParameters = 3
 
 preFlopDatabase = []
 preFlopEVs = {}
@@ -59,6 +24,30 @@ with open("preFlop.csv", 'r') as csvfile:
     # extracting each data row one by one
     for row in csvreader:
         preFlopDatabase.append(row[0:3])
+
+with open("Flop.csv", 'r') as csvfile:
+    # creating a csv reader object
+    csvreader = csv.reader(csvfile)
+
+    # extracting each data row one by one
+    for row in csvreader:
+        flopDatabase.append(row[0:3])
+
+with open("Turn.csv", 'r') as csvfile:
+    # creating a csv reader object
+    csvreader = csv.reader(csvfile)
+
+    # extracting each data row one by one
+    for row in csvreader:
+        turnDatabase.append(row[0:3])
+
+with open("River.csv", 'r') as csvfile:
+    # creating a csv reader object
+    csvreader = csv.reader(csvfile)
+
+    # extracting each data row one by one
+    for row in csvreader:
+        riverDatabase.append(row[0:3])
 
 # card object
 class Card:
@@ -86,10 +75,10 @@ def evaluate_hand(hand, board_cards):
     # Combines hand cards and board cards, then sorts it
     combined = copy.deepcopy(hand) + copy.deepcopy(board_cards)
     for i in range(len(combined)):
-        newRank = ranks.index(str(combined[i].rank)) + 2
-        combined[i].rank = newRank
+        if (type(combined[i].rank) != type(0)):
+            newRank = ranks.index(str(combined[i].rank)) + 2
+            combined[i].rank = newRank
     SC = sorted(combined, key=lambda x: x.rank, reverse=False)
-    print("Sorted Total Cards: ", SC)
 
 
     # Block 1: Checks for Flush and Straight (and records in a dictionary the frequency of each rank)
@@ -181,7 +170,7 @@ def evaluate_hand(hand, board_cards):
 
     # If isStraightFlush is true, check for Royal flush
     if isStraightFlush:
-        if (checkListForSF[len(checkListForSF - 1)].rank == 14):
+        if (checkListForSF[len(checkListForSF) - 1].rank == 14):
             isRoyal == True
 
 
@@ -240,7 +229,7 @@ def evaluate_hand(hand, board_cards):
     elif hasTrips:
         scoreIndex.append(393 + tripRank)
     elif isTwoPair:
-        scoreIndex.append(28 + (14 * pairRankMax) + (13* pairRankSecond))
+        scoreIndex.append(28 + (14 * pairRankMax) + (pairRankSecond))
     elif hasPair:
         scoreIndex.append(14 + pairRankMax)
     scoreIndex.append(highCard)
@@ -251,10 +240,144 @@ def evaluate_hand(hand, board_cards):
     scoreIndex.sort(reverse=True)
     return scoreIndex
 
-# FIX THIS LATER
-#def AI(parameterList):
-#    if (parameter)
+def calcHandEquity(hand, board_cards, deck, otherHand):
+    handCopy = copy.deepcopy(hand)
+    bashFrom = copy.deepcopy(deck.cards) + copy.deepcopy(otherHand)
+    if (len(board_cards) == 0):
+        return calcHandEquityPreFlop(handCopy)
+    else:
+        if (len(board_cards) == 3):
+            count = 0
+            sum = 0
+            for i in range(len(bashFrom)):
+                for j in range(i, len(bashFrom)):
+                    bashList = copy.deepcopy(board_cards)
+                    bashList.append(bashFrom[i])
+                    bashList.append(bashFrom[j])
+                    if len(bashList) != 5:
+                        print("Error at bash")
+                    scoresList = []
+                    scoresList = scoresList + evaluate_hand(handCopy, bashList)
+                    sum += scoresList[0]
+                    count += 1
+            return (sum / count)
+        elif (len(board_cards) == 4):
+            count = 0
+            sum = 0
+            for i in range(len(bashFrom)):
+                bashList = copy.deepcopy(board_cards)
+                bashList.append(bashFrom[i])
+                scoresList = []
+                scoresList = scoresList + evaluate_hand(handCopy, bashList)
+                sum = sum + scoresList[0]
+                count = count + 1
+            return (sum / count)
+        else:
+            return evaluate_hand(handCopy, board_cards)
 
+# This uses a neat little approximation from this website: https://steemit.com/poker/@daniel.dalo/how-to-calculate-preflop-equity-in-less-than-10-seconds#:~:text=The%20way%20to%20come%20up,if%20you%20hold%20a%20pair.
+def calcHandEquityPreFlop(hand):
+    handCopy = copy.deepcopy(hand)
+    for i in range(2):
+        newRank = ranks.index(str(handCopy[i].rank)) + 2
+        if (newRank == 14):
+            newRank = 15
+        handCopy[i].rank = newRank
+    SC = sorted(handCopy, key=lambda x: x.rank, reverse=False)
+    score = (2 * SC[1].rank) + SC[0].rank + 20
+    if (SC[0].rank == SC[1].rank): 
+        score += 20
+    if (SC[1].suit == SC[0].suit):
+        score += 2
+    return score
+
+def calcBoardRisk(hand, board_cards, deck, otherHand):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    return 
+
+# Should return move and amount
+def AI(parameterList):
+    bleh = [0,0]
+    np.array(bleh)
+    bleh2 = [0,10]
+    np.array(bleh2)
+    cosine = np.dot(bleh, bleh2) / (norm(bleh) * norm(bleh2))
+    if (len(parameterList) == 3):
+        return
+    if (len(parameterList) == 4):
+        return 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if (len(parameterList) == 5):
+        return
 
 
 # bot decision to call/raise/fold, considering the current bet size and balance
@@ -295,8 +418,8 @@ def player_bet(player_balance, playerBetStage, botBetStage):
     return decision, 0
 
 # individual game function
-player_balance = 1000
-bot_balance = 1000
+player_balance = 200
+bot_balance = 200
 def texas_holdem(player_bal, bot_bal):
     # creating a deck
     deck = Deck()
@@ -311,7 +434,6 @@ def texas_holdem(player_bal, bot_bal):
     totalPot = 0
     player_balance = player_bal
     bot_balance = bot_bal
-    
 
 
     print(f"Your hand: {player_hand}")
@@ -324,6 +446,11 @@ def texas_holdem(player_bal, bot_bal):
     last_move = random.choice(["player","bot"])  # track last move to determine the turn
     initialPlays = 2
 
+    # At the preflop, these two parameters are just handEquity and oppBetPreFlop, which occupy the first and third indices.
+    # the second index is reserved for boardRisk, which is obviously not applicable right now
+    aiParameterList = [0, 0, 0]
+    aiParameterList[0] = calcHandEquity(bot_hand, [], deck, player_hand)
+
     # Right now it uses this while loop, which is the same throughout all the betting stages.
     # We should probably make this into a separate method in the future, but that's not really important right now.
     print("Your hand: ", player_hand)
@@ -334,9 +461,7 @@ def texas_holdem(player_bal, bot_bal):
 
             if player_move == "fold":
                 print("You folded. Bot wins!")
-                print(player_balance, bot_balance)
                 bot_balance += playerBetPreFlop + botBetPreFlop + playerBetContribution + botBetContribution
-                print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif player_move == "call":
                 betDiff = botBetPreFlop - playerBetPreFlop
@@ -347,11 +472,13 @@ def texas_holdem(player_bal, bot_bal):
             elif player_move == "raise" or player_move == "bet":
                 if (player_move == "bet"):
                     playerBetPreFlop = player_bet_amount
-                    player_balance -= playerBetPreFlop 
+                    player_balance -= playerBetPreFlop
+                    aiParameterList[2] = playerBetPreFlop
                 elif (player_move == "raise"):
                     betDiff = botBetPreFlop - playerBetPreFlop
                     player_balance -= (betDiff + player_bet_amount)
                     playerBetPreFlop = botBetPreFlop + player_bet_amount
+                    aiParameterList[2] = playerBetPreFlop
         else:
             bot_move_choice, bot_raise_amount = bot_move(bot_balance, playerBetPreFlop, botBetPreFlop)
             last_move = "bot"
@@ -360,9 +487,7 @@ def texas_holdem(player_bal, bot_bal):
                 print(f"Bot chooses to {bot_move_choice}")
             elif bot_move_choice == "fold":
                 print("Bot folded. You win!")
-                print(player_balance, bot_balance)
                 player_balance += playerBetPreFlop + botBetPreFlop + playerBetContribution + botBetContribution
-                print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif bot_move_choice == "call":
                 betDiff = playerBetPreFlop - botBetPreFlop
@@ -400,7 +525,11 @@ def texas_holdem(player_bal, bot_bal):
     playerBetFlop = 0
     botBetFlop = 0
     initialPlays = 2
+
+    # Appends the index for oppBetFlop
     aiParameterList.append(0)
+    aiParameterList[0] = calcHandEquity(bot_hand, community_cards, deck, player_hand)
+    # aiParameterList[1] = calcBoardRisk(bot_hand, community_cards, deck, player_hand)
 
     print("Your hand: ", player_hand)
     while (initialPlays > 0) or (playerBetFlop != botBetFlop):
@@ -410,9 +539,7 @@ def texas_holdem(player_bal, bot_bal):
 
             if player_move == "fold":
                 print("You folded. Bot wins!")
-                print(player_balance, bot_balance)
                 bot_balance += playerBetFlop + botBetFlop + playerBetContribution + botBetContribution
-                print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif player_move == "call":
                 betDiff = botBetFlop - playerBetFlop
@@ -424,10 +551,12 @@ def texas_holdem(player_bal, bot_bal):
                 if (player_move == "bet"):
                     playerBetFlop = player_bet_amount
                     player_balance -= playerBetFlop 
+                    aiParameterList[3] = playerBetFlop
                 elif (player_move == "raise"):
                     betDiff = botBetFlop - playerBetFlop
                     player_balance -= (betDiff + player_bet_amount)
                     playerBetFlop = botBetFlop + player_bet_amount
+                    aiParameterList[3] = playerBetFlop
         else:
             bot_move_choice, bot_raise_amount = bot_move(bot_balance, playerBetFlop, botBetFlop)
             last_move = "bot"
@@ -436,9 +565,7 @@ def texas_holdem(player_bal, bot_bal):
                 print(f"Bot chooses to {bot_move_choice}")
             if bot_move_choice == "fold":
                 print("Bot folded. You win!")
-                print(player_balance, bot_balance)
                 player_balance += playerBetFlop + botBetFlop + playerBetContribution + botBetContribution
-                print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif bot_move_choice == "call":
                 betDiff = playerBetFlop - botBetFlop
@@ -476,7 +603,10 @@ def texas_holdem(player_bal, bot_bal):
     playerBetTurn = 0
     botBetTurn = 0
     initialPlays = 2
+
     aiParameterList.append(0)
+    aiParameterList[0] = calcHandEquity(bot_hand, community_cards, deck, player_hand)
+    # aiParameterList[1] = calcBoardRisk(bot_hand, community_cards, deck, player_hand)
 
     print("Your hand: ", player_hand)
     while (initialPlays > 0) or (playerBetTurn != botBetTurn):
@@ -486,9 +616,7 @@ def texas_holdem(player_bal, bot_bal):
 
             if player_move == "fold":
                 print("You folded. Bot wins!")
-                print(player_balance, bot_balance)
                 bot_balance += playerBetTurn + botBetTurn + playerBetContribution + botBetContribution
-                print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif player_move == "call":
                 betDiff = botBetTurn - playerBetTurn
@@ -500,10 +628,12 @@ def texas_holdem(player_bal, bot_bal):
                 if (player_move == "bet"):
                     playerBetTurn = player_bet_amount
                     player_balance -= playerBetTurn
+                    aiParameterList[4] = playerBetTurn
                 elif (player_move == "raise"):
                     betDiff = botBetTurn - playerBetTurn
                     player_balance -= (betDiff + player_bet_amount)
                     playerBetTurn = botBetTurn + player_bet_amount
+                    aiParameterList[4] = playerBetTurn
         else:
             bot_move_choice, bot_raise_amount = bot_move(bot_balance, playerBetTurn, botBetTurn)
             last_move = "bot"
@@ -551,7 +681,10 @@ def texas_holdem(player_bal, bot_bal):
     playerBetRiver = 0
     botBetRiver = 0
     initialPlays = 2
+
     aiParameterList.append(0)
+    aiParameterList[0] = calcHandEquity(bot_hand, community_cards, deck, player_hand)
+    # aiParameterList[1] = calcBoardRisk(bot_hand, community_cards, deck, player_hand)
 
     print("Your hand: ", player_hand)
     while (initialPlays > 0) or (playerBetRiver != botBetRiver):
@@ -561,9 +694,7 @@ def texas_holdem(player_bal, bot_bal):
 
             if player_move == "fold":
                 print("You folded. Bot wins!")
-                print(player_balance, bot_balance)
                 bot_balance += playerBetRiver + botBetRiver + playerBetContribution + botBetContribution
-                print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif player_move == "call":
                 betDiff = botBetRiver - playerBetRiver
@@ -575,10 +706,12 @@ def texas_holdem(player_bal, bot_bal):
                 if (player_move == "bet"):
                     playerBetRiver = player_bet_amount
                     player_balance -= playerBetRiver
+                    aiParameterList[5] = playerBetRiver
                 elif (player_move == "raise"):
                     betDiff = botBetRiver - playerBetRiver
                     player_balance -= (betDiff + player_bet_amount)
                     playerBetRiver = botBetRiver + player_bet_amount
+                    aiParameterList[5] = playerBetRiver
         else:
             bot_move_choice, bot_raise_amount = bot_move(bot_balance, playerBetRiver, botBetRiver)
             last_move = "bot"
@@ -587,9 +720,7 @@ def texas_holdem(player_bal, bot_bal):
                 print(f"Bot chooses to {bot_move_choice}")
             if bot_move_choice == "fold":
                 print("Bot folded. You win!")
-                print(player_balance, bot_balance)
                 player_balance += playerBetRiver + botBetRiver + playerBetContribution + botBetContribution
-                print(player_balance, bot_balance)
                 return player_balance, bot_balance
             elif bot_move_choice == "call":
                 betDiff = playerBetRiver - botBetRiver
@@ -628,8 +759,6 @@ def texas_holdem(player_bal, bot_bal):
     # -- updated to change player/bot balances no need for subtraction since thats done by making bets in the first place
     lenOfCompare = min(len(player_best_hand), len(bot_best_hand))
     whoWon = "player"
-    print(player_best_hand)
-    print(bot_best_hand)
     for i in range(lenOfCompare):
         if (player_best_hand[i] > bot_best_hand[i]):
             whoWon = "player"
@@ -657,7 +786,6 @@ def texas_holdem(player_bal, bot_bal):
 # start a game
 player_balance, bot_balance = texas_holdem(player_balance, bot_balance)
 if (player_balance > 0 and bot_balance > 0):
-    print(player_balance, bot_balance)
     keepPlaying = input("Would you like to keep playing? (yes, no): ")
     while keepPlaying not in ["yes", "no", "y", "n", "Yes", "No"]:
         keepPlaying = input("Invalid input, please try again (yes, no): ")
@@ -671,5 +799,3 @@ elif (bot_balance < 0):
     print("You busted the bot! Good job!")
 elif (player_balance < 0):
     print("Sorry, you have no money left. Try again next time!")
-else:
-    print("\n ERROR ERROR ERROR")
